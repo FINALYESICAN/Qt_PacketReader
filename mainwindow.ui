@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>979</width>
+    <height>693</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="PacketForm" name="packet">
+       <attribute name="title">
+        <string>packet</string>
+       </attribute>
+      </widget>
+      <widget class="SessionForm" name="session">
+       <attribute name="title">
+        <string>session</string>
+       </attribute>
+      </widget>
+      <widget class="alertForm" name="alert">
+       <attribute name="title">
+        <string>alert</string>
+       </attribute>
+      </widget>
+      <widget class="policyForm" name="policy">
+       <attribute name="title">
+        <string>policy</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>979</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>alertForm</class>
+   <extends>QWidget</extends>
+   <header>alertform.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>policyForm</class>
+   <extends>QWidget</extends>
+   <header>policyform.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PacketForm</class>
+   <extends>QWidget</extends>
+   <header>packetform.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SessionForm</class>
+   <extends>QWidget</extends>
+   <header>sessionform.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
