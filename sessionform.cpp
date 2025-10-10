@@ -76,6 +76,8 @@ void SessionForm::initCharts() {
 // sample값을 만든다.
 void SessionForm::appendSamplesFromSummary(const QJsonObject& summary) {
     const qint64 ts_ms = summary["ts_ns"].toVariant().toLongLong() / 1000000;
+    const qint64 window_ms = 20000;
+
     const auto arr = summary["sessions"].toArray();
     for (const auto& v : arr) {
         const auto s = v.toObject();
@@ -94,6 +96,13 @@ void SessionForm::appendSamplesFromSummary(const QJsonObject& summary) {
         smp.tp_b2a_bps  = tp["inst_b2a"].toDouble();
 
         auto& vec = m_hist[key];
+
+        // cutoff
+        const qint64 cutoff = ts_ms-window_ms;
+        int keepStart = 0;
+        while (keepStart < vec.size() && vec[keepStart].ts_ms < cutoff) ++keepStart;
+        if (keepStart > 0) vec.remove(0, keepStart);
+
         vec.push_back(smp);
         if (vec.size() > 2000) vec.remove(0, vec.size()-2000); // 메모리 제한 (옵션)
     }
@@ -113,23 +122,30 @@ void SessionForm::redrawCharts(const QString& key) {
     m_tpB2ASeries->clear();
 
     const auto vec = m_hist.value(key);
+    const double window_s = 20;
+
     if (vec.isEmpty()) {
         // 비어있으면 축만 리셋(옵션)
-        m_rttX->setRange(0.0, 60.0);
+        m_rttX->setRange(0.0, window_s);
         m_rttY->setRange(0.0, 1.0);
-        m_tpX->setRange(0.0, 60.0);
+        m_tpX->setRange(0.0, window_s);
         m_tpY->setRange(0.0, 1.0);
+        if (ui->lblSynRtt) ui->lblSynRtt->setText("SYN RTT: N/A");
         return;
     }
 
-    const qint64 t0_ms = vec.first().ts_ms;   // 기준 시간(ms)
-    double tEnd = 0.0;
+    const qint64 last_ms = vec.last().ts_ms;
+    const qint64 base_ms = last_ms - static_cast<qint64>(window_s * 1000.0);
+
     double maxRtt = 0.0;
     double maxTp  = 0.0;
     double lastSynRtt = -1.0;
 
     for (const auto& smp : vec) {
-        const double t = (smp.ts_ms - t0_ms) / 1000.0; // 초 단위로 변환 (상대 시간)
+        double t = (smp.ts_ms - base_ms) / 1000.0; // 초 단위로 변환 (상대 시간)
+        if(t<0.0) t=0.0;
+        if (t > window_s) t = window_s;
+
         m_rttAckSeries->append(t, smp.rtt_ack_ms);
         m_tpA2BSeries->append(t, smp.tp_a2b_bps);
         m_tpB2ASeries->append(t, smp.tp_b2a_bps);
@@ -137,24 +153,22 @@ void SessionForm::redrawCharts(const QString& key) {
         maxRtt = std::max(maxRtt, smp.rtt_ack_ms);
         maxTp  = std::max({maxTp, smp.tp_a2b_bps, smp.tp_b2a_bps});
         if (smp.rtt_syn_ms > 0) lastSynRtt = smp.rtt_syn_ms;
-
-        tEnd = t;
     }
 
+    // X축: 항상 0~20초
+    m_rttX->setRange(0.0, window_s);
+    m_tpX->setRange(0.0, window_s);
+
+    // Y축 여유 20%
+    m_rttY->setRange(0.0, std::max(1.0, maxRtt * 1.2));
+    m_tpY->setRange(0.0, std::max(1.0, maxTp  * 1.2));
+
+    // SYN RTT 라벨 업데이트
     if (ui->lblSynRtt) {
         if (lastSynRtt >= 0.0)
             ui->lblSynRtt->setText(QString("SYN RTT: %1 ms").arg(lastSynRtt, 0, 'f', 2));
         else
             ui->lblSynRtt->setText("SYN RTT: N/A");
     }
-
-    // 축 범위 갱신 (여유 20%)
-    const double xmin = 0.0;
-    const double xmax = std::max(5.0, tEnd);
-    m_rttX->setRange(xmin, xmax);
-    m_tpX->setRange(xmin, xmax);
-
-    m_rttY->setRange(0.0, std::max(1.0, maxRtt * 1.2));
-    m_tpY->setRange(0.0, std::max(1.0, maxTp  * 1.2));
 }
 
