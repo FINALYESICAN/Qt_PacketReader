@@ -68,7 +68,6 @@ void PacketModel::addFromJson(const QJsonObject& pkt) {
 
     // payload preview (선택 필드)
     const QString b64 = pkt["payload_b64"].toString();
-    qDebug()<<b64;
     if (!b64.isEmpty()) {
         auto bytes = fromBase64ToBytes(b64);
         row.preview = hexPreview(bytes, 64);

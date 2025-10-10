@@ -11,8 +11,13 @@ QVariant SessionModel::headerData(int section, Qt::Orientation o, int role) cons
 }
 
 QVariant SessionModel::data(const QModelIndex& idx, int role) const {
-    if (!idx.isValid() || role!=Qt::DisplayRole) return {};
+    if (!idx.isValid()) return {};
     const auto& r = m_rows[idx.row()];
+    if (role == KeyRole) {
+        // 모델에 이미 있는 makeKey 규칙과 동일하게
+        return r.key;
+    }
+    if(role!=Qt::DisplayRole) return {};
     switch (idx.column()) {
     case Proto:    return r.proto;
     case Src:      return r.src;
@@ -32,6 +37,12 @@ QVariant SessionModel::data(const QModelIndex& idx, int role) const {
     return {};
 }
 
+QHash<int, QByteArray> SessionModel::roleNames() const {
+    auto rn = QAbstractTableModel::roleNames();
+    rn[KeyRole] = "flowKey";
+    return rn;
+}
+
 QString SessionModel::makeKey(const QJsonObject& fk) {
     // proto|src|sport|dst|dport  (라즈베리에서 이미 정규화된 순서라면 그대로)
     return QString("%1|%2|%3|%4|%5")
@@ -49,6 +60,7 @@ void SessionModel::upsertFromJson(const QJsonObject& evt) {
     QString key = makeKey(fk);
 
     SessionRow row;
+    row.key = key;
     row.proto  = (fk["proto"].toInt()==6) ? "TCP" : QString::number(fk["proto"].toInt());
     row.src    = fk["src_ip"].toString();
     row.sport  = (quint16)fk["src_port"].toInt();
@@ -86,19 +98,21 @@ void SessionModel::replaceFromSummary(const QJsonObject& evt) {
 
     for (const auto& v : arr) {
         const QJsonObject js = v.toObject();
-        const QJsonObject key = js["key"].toObject();
+        const QJsonObject key = js["flow_key"].toObject();
         const QJsonObject pkts = js["pkts"].toObject();
         const QJsonObject bytes_dir = js["bytes_dir"].toObject(); // Telemetry에 추가 권장
+        QString rkey = makeKey(key);
 
         SessionRow row;
         const int proto = key["proto"].toInt();
+        row.key = rkey;
         row.proto = (proto==6) ? "TCP" : QString::number(proto);
 
         // Telemetry JSON에 sip_str/dip_str을 이미 넣었음
-        row.src   = key["sip_str"].toString();
-        row.dst   = key["dip_str"].toString();
-        row.sport = (quint16)key["sport"].toInt();
-        row.dport = (quint16)key["dport"].toInt();
+        row.src   = key["src_ip"].toString();
+        row.dst   = key["dst_ip"].toString();
+        row.sport = (quint16)key["src_port"].toInt();
+        row.dport = (quint16)key["dst_port"].toInt();
 
         // 방향별 바이트(없다면 0으로)
         row.bytesA2B = bytes_dir["a2b"].toVariant().toULongLong();
@@ -109,11 +123,7 @@ void SessionModel::replaceFromSummary(const QJsonObject& evt) {
 
         row.state = js["state"].toString();
 
-        m_index.insert(makeKey(QJsonObject{
-                           {"proto", proto},
-                           {"src_ip", row.src}, {"src_port", (int)row.sport},
-                           {"dst_ip", row.dst}, {"dst_port", (int)row.dport}
-                       }), m_rows.size());
+        m_index.insert(row.key, m_rows.size());
         m_rows.push_back(row);
     }
     endResetModel();

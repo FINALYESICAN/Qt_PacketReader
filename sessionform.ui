@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>735</width>
-    <height>608</height>
+    <width>1049</width>
+    <height>707</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,9 +18,42 @@
     <rect>
      <x>20</x>
      <y>20</y>
-     <width>651</width>
-     <height>451</height>
+     <width>691</width>
+     <height>651</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QWidget" name="rttChartContainer" native="true">
+   <property name="geometry">
+    <rect>
+     <x>740</x>
+     <y>40</y>
+     <width>281</width>
+     <height>351</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QWidget" name="tpChartContainer" native="true">
+   <property name="geometry">
+    <rect>
+     <x>740</x>
+     <y>410</y>
+     <width>281</width>
+     <height>261</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="lblSynRtt">
+   <property name="geometry">
+    <rect>
+     <x>740</x>
+     <y>20</y>
+     <width>48</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TextLabel</string>
    </property>
   </widget>
  </widget>
