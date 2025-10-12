@@ -1,49 +1,83 @@
 #include "alertmodel.h"
-#include <QDateTime>
+#include <algorithm> // std::min
 
-AlertModel::AlertModel(QObject* parent): QAbstractTableModel(parent) {}
+AlertModel::AlertModel(QObject* parent)
+    : QAbstractTableModel(parent)
+{}
 
-QVariant AlertModel::headerData(int section, Qt::Orientation o, int role) const {
-    if (o != Qt::Horizontal || role != Qt::DisplayRole) return {};
-    static const char* H[]={"Time","Severity","RuleID","Category","Message","Flow"};
-    return (section>=0 && section<ColCount) ? H[section] : QVariant{};
+int AlertModel::rowCount(const QModelIndex&) const { return m_rows.size(); }
+int AlertModel::columnCount(const QModelIndex&) const { return ColCount; }
+
+QVariant AlertModel::headerData(int s, Qt::Orientation o, int role) const {
+    if (o!=Qt::Horizontal || role!=Qt::DisplayRole) return {};
+    static const char* H[]={"Time","Msg","Src","SPort","Dst","DPort","Action","Sev.","Preview"};
+    return (s>=0 && s<ColCount) ? H[s] : QVariant{};
 }
 
-QVariant AlertModel::data(const QModelIndex& idx, int role) const {
-    if (!idx.isValid() || role!=Qt::DisplayRole) return {};
-    const auto& r = m_rows[idx.row()];
-    switch (idx.column()) {
-    case Time: {
-        qint64 sec = r.tsUsec/1000000, us = r.tsUsec%1000000;
-        return QDateTime::fromSecsSinceEpoch(sec).toLocalTime()
-                   .toString("HH:mm:ss") + QString(".%1").arg(us/1000,3,10,QChar('0'));
-    }
+QVariant AlertModel::data(const QModelIndex& i, int role) const {
+    if (!i.isValid() || role!=Qt::DisplayRole) return {};
+    const auto& r = m_rows[i.row()];
+    switch(i.column()){
+    case Time:     return r.timeStr;
+    case Policy:   return r.policy;
+    case Src:      return r.srcIp;
+    case SPort:    return (int)r.srcPort;
+    case Dst:      return r.dstIp;
+    case DPort:    return (int)r.dstPort;
+    case Action:   return r.action;
     case Severity: return r.severity;
-    case RuleID:   return r.ruleId;
-    case Category: return r.category;
-    case Message:  return r.message;
-    case Flow:     return r.flow;
+    case Preview:  return r.preview;
     }
     return {};
 }
 
-void AlertModel::addFromJson(const QJsonObject& evt) {
-    if (evt["type"].toString()!="ALERT") return;
-    auto fk   = evt["flow_key"].toObject();
-    auto body = evt["body"].toObject();
+void AlertModel::appendFromJson(const QJsonObject& j) {
     AlertRow r;
-    r.tsUsec   = evt["ts_usec"].toVariant().toLongLong();
-    r.severity = body["severity"].toString();
-    r.ruleId   = body["rule_id"].toString();
-    r.category = body["category"].toString();
-    r.message  = body["message"].toString();
-    r.flow = QString("%1:%2 → %3:%4")
-                 .arg(fk["src_ip"].toString())
-                 .arg(fk["src_port"].toInt())
-                 .arg(fk["dst_ip"].toString())
-                 .arg(fk["dst_port"].toInt());
-    int row = m_rows.size();
+    const qint64 sec  = j["ts_sec"].toVariant().toLongLong();
+    const qint64 usec = j["ts_usec"].toVariant().toLongLong();
+    r.tsUsec = sec*1000000 + usec;
+    const QDateTime dt = QDateTime::fromSecsSinceEpoch(sec).addMSecs(usec/1000);
+    r.timeStr  = dt.toLocalTime().toString("HH:mm:ss.zzz");
+
+    r.policy   = j["policy"].toString();
+    r.action   = j["action"].toString("ALERT");
+
+    const auto js = j["src"].toObject();
+    const auto jd = j["dst"].toObject();
+    r.srcIp   = js["ip"].toString();
+    r.srcPort = (quint16)js["port"].toInt();
+    r.dstIp   = jd["ip"].toString();
+    r.dstPort = (quint16)jd["port"].toInt();
+
+    r.severity = j.contains("severity") ? j["severity"].toString() : "-";
+
+    const QString b64 = j["payload_b64"].toString();
+    if (!b64.isEmpty()) {
+        const QByteArray bytes = QByteArray::fromBase64(b64.toUtf8());
+        r.preview = hexPreview(bytes, 64);
+    } else {
+        r.preview = "";
+    }
+    r.raw = j;
+
+    const int row = m_rows.size();
     beginInsertRows({}, row, row);
     m_rows.push_back(std::move(r));
     endInsertRows();
+
+    // 과도 누적 방지 (선택)
+    const int MAX_ROWS = 5000;
+    if (m_rows.size() > MAX_ROWS) {
+        const int removeCount = m_rows.size() - MAX_ROWS;
+        beginRemoveRows({}, 0, removeCount - 1);
+        m_rows.erase(m_rows.begin(), m_rows.begin() + removeCount);
+        endRemoveRows();
+    }
+}
+
+QString AlertModel::hexPreview(const QByteArray& b, int maxLen) {
+    const int n = std::min(maxLen, static_cast<int>(b.size()));
+    QString s; s.reserve(n*3);
+    for (int i=0;i<n;++i) s += QString("%1 ").arg((quint8)b[i],2,16,QChar('0'));
+    return s.trimmed();
 }

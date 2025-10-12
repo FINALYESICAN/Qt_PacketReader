@@ -2,6 +2,8 @@
 #define ALERTFORM_H
 
 #include <QWidget>
+#include <QJsonObject>
+#include "alertmodel.h"
 
 namespace Ui {
 class alertForm;
@@ -15,8 +17,12 @@ public:
     explicit alertForm(QWidget *parent = nullptr);
     ~alertForm();
 
+public slots:
+    void onAlert(const QJsonObject& evt);
+
 private:
     Ui::alertForm *ui;
+    AlertModel* m_model = nullptr;
 };
 
 #endif // ALERTFORM_H

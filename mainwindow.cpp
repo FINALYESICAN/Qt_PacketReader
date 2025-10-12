@@ -13,10 +13,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_TR, &TcpReceiver::status,       this, &MainWindow::onStatus);
     m_TR->start(ip,55555);//192.168.2.234, 55555;
 
-    // 각각 맞는 event로 넘기기.
+    // 세션 데이터 도착
     connect(this, &MainWindow::flowEvent, ui->session,&SessionForm::onFlow);
     connect(this, &MainWindow::summaryEvent, ui->session, &SessionForm::onSummary);
-
+    // 경고 데이터 도착.
+    connect(this, &MainWindow::alertEvent, ui->alert, &alertForm::onAlert);
     // 패킷 데이터 도착.
     connect(this, &MainWindow::packetEvent,ui->packet,&PacketForm::onPacket);
     // 패킷 데이터 요청/가져오기.
@@ -25,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
         m_TR->sendJson(req);
         qDebug()<<"send Packet Req id = "<<req["id"];
     });
-
 
 }
 
@@ -49,7 +49,6 @@ void MainWindow::onEvent(const QJsonObject& evt) {
     } else if (type=="PACKET"){
         emit packetEvent(evt);
     } else if (type=="PACKET_DATA"){
-        qDebug() << "[QT] PACKET_DATA id=" << evt["id"] << "len=" << evt["payload_len"];
         emit packetDataEvent(evt);
     }
 }

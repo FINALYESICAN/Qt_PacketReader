@@ -3,29 +3,43 @@
 
 #include <QAbstractTableModel>
 #include <QVector>
+#include <QDateTime>
 #include <QJsonObject>
 
 struct AlertRow {
-    QString severity, ruleId, category, message;
-    QString flow;
-    qint64  tsUsec=0;
+    qint64   tsUsec = 0;      // epoch usec
+    QString  timeStr;         // "HH:mm:ss.zzz"
+    QString  policy;          // rule msg
+    QString  action;          // "ALERT"
+    QString  srcIp;
+    quint16  srcPort = 0;
+    QString  dstIp;
+    quint16  dstPort = 0;
+    QString  severity;        // optional (없으면 "-" 세팅)
+    QString  preview;         // payload head hex preview
+    QJsonObject raw;          // 필요하면 원문 보관
 };
 
 class AlertModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    enum Col { Time, Severity, RuleID, Category, Message, Flow, ColCount };
+    enum Col { Time, Policy, Src, SPort, Dst, DPort, Action, Severity, Preview, ColCount };
+
     explicit AlertModel(QObject* parent=nullptr);
 
-    int rowCount(const QModelIndex&) const override { return m_rows.size(); }
-    int columnCount(const QModelIndex&) const override { return ColCount; }
-    QVariant headerData(int section, Qt::Orientation o, int role) const override;
-    QVariant data(const QModelIndex& idx, int role) const override;
+    int rowCount(const QModelIndex& parent = {}) const override;
+    int columnCount(const QModelIndex& parent = {}) const override;
 
-    void addFromJson(const QJsonObject& evt); // type==ALERT
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
+
+    // ALERT JSON 1건 추가
+    void appendFromJson(const QJsonObject& j);
 
 private:
     QVector<AlertRow> m_rows;
+
+    static QString hexPreview(const QByteArray& b, int maxLen);
 };
 
 #endif // ALERTMODEL_H

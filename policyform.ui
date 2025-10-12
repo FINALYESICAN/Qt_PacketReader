@@ -6,13 +6,23 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>743</width>
-    <height>573</height>
+    <width>956</width>
+    <height>697</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <widget class="QTableView" name="tablePolicy">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>801</width>
+     <height>341</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
