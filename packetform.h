@@ -29,6 +29,7 @@ private slots:
 private:
     Ui::PacketForm *ui;
     PacketModel* m_model = nullptr;
+    void appendWithScrollGuard(const QJsonObject& evt);
 };
 
 #endif // PACKETFORM_H

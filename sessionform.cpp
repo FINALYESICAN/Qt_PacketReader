@@ -3,6 +3,7 @@
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QJsonArray>
+#include <QScrollBar>
 
 SessionForm::SessionForm(QWidget *parent)
     : QWidget(parent)

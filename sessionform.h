@@ -57,6 +57,8 @@ private:
     static QString makeKey(const QJsonObject& keyObj); // Telemetry SUMMARY의 key에서 동일 규칙
     void appendSamplesFromSummary(const QJsonObject& summary);
     void redrawCharts(const QString& key);
+
+    void appendWithScrollGuard(const QJsonObject& evt);
 };
 
 #endif // SESSIONFORM_H

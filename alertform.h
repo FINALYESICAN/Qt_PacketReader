@@ -23,6 +23,7 @@ public slots:
 private:
     Ui::alertForm *ui;
     AlertModel* m_model = nullptr;
+    void appendWithScrollGuard(const QJsonObject& evt);
 };
 
 #endif // ALERTFORM_H

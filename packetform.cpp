@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPlainTextEdit>
+#include <QScrollBar>
 
 PacketForm::PacketForm(QWidget *parent)
     : QWidget(parent)
@@ -22,8 +23,37 @@ PacketForm::~PacketForm()
     delete ui;
 }
 
+// 스크롤 위치 보존해서 1건 추가
+void PacketForm::appendWithScrollGuard(const QJsonObject& evt)
+{
+    auto *view = ui->tablePacket;
+    auto *sb   = view->verticalScrollBar();
+
+    // 1) 현재 스크롤 상태 저장
+    const int oldMax = sb->maximum();
+    const int oldVal = sb->value();
+    const bool stickBottom = (oldVal >= oldMax - 2); // 거의 바닥에 붙어 있던 경우
+
+    // 2) 깜빡임/점프 최소화
+    view->setUpdatesEnabled(false);
+    m_model->addFromJson(evt);          // 내부에서 trimIfNeeded()도 호출
+    view->setUpdatesEnabled(true);
+
+    // 3) 복원 / 자동 스크롤
+    if (stickBottom) {
+        view->scrollToBottom();
+    } else {
+        // 상단 트리밍으로 최대값이 바뀌었을 수 있으니 차이만큼 보정
+        const int newMax = sb->maximum();
+        const int delta  = newMax - oldMax;         // 음수/양수 모두 가능
+        int target = oldVal + delta;
+        target = std::max(0, std::min(target, newMax));
+        sb->setValue(target);
+    }
+}
+
 void PacketForm::onPacket(const QJsonObject& evt) {
-    m_model->addFromJson(evt);
+    appendWithScrollGuard(evt);
 }
 
 //더블 클릭시 패킷 페이로드 데이터 가져오기.
