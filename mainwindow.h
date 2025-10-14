@@ -22,7 +22,6 @@ public:
     ~MainWindow();
 
 signals:
-    void flowEvent(const QJsonObject&);         // FLOW_UPDATE / FLOW_END
     void summaryEvent(const QJsonObject&);      // SUMMARY
     void alertEvent(const QJsonObject&);        // ALERT
     void packetEvent(const QJsonObject&);       // PACKET (추가 예정시)

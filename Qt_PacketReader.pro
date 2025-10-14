@@ -25,6 +25,7 @@ HEADERS += \
     alertform.h \
     alertmodel.h \
     mainwindow.h \
+    packetfilterproxy.h \
     packetform.h \
     packetmodel.h \
     policyform.h \

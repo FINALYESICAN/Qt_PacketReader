@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QScrollBar>
+#include <QCheckBox>
 
 PacketForm::PacketForm(QWidget *parent)
     : QWidget(parent)
@@ -13,7 +14,10 @@ PacketForm::PacketForm(QWidget *parent)
 {
     ui->setupUi(this);
     m_model = new PacketModel(this);
-    ui->tablePacket->setModel(m_model);
+    m_proxy = new packetfilterproxy(this);
+    m_proxy->setSourceModel(m_model);
+    ui->tablePacket->setModel(m_proxy);
+    //ui->tablePacket->setModel(m_model);
     ui->tablePacket->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->tablePacket->setSortingEnabled(true);
 }
@@ -60,12 +64,13 @@ void PacketForm::onPacket(const QJsonObject& evt) {
 void PacketForm::on_tablePacket_doubleClicked(const QModelIndex &index)
 {
     if (!index.isValid()) return;
-    const int r = index.row();
-    const quint64 id = m_model->data(m_model->index(index.row(), PacketModel::Time), PacketModel::IdRole).toULongLong();
-    if(!id) {
-        qDebug()<<"no id for row"<<r;
-        return;
-    }
+
+    QModelIndex srcIdx = m_proxy->mapToSource(index);
+    const quint64 id = m_model->data(
+                                  m_model->index(srcIdx.row(), PacketModel::Time),
+                                  PacketModel::IdRole
+                                  ).toULongLong();
+    if(!id) return;
 
     QJsonObject req{
         {"type","PACKET_REQ"},
@@ -73,7 +78,7 @@ void PacketForm::on_tablePacket_doubleClicked(const QModelIndex &index)
         {"want_bytes", 512}
     };
     //signal slot
-    packetReq(req);
+    emit packetReq(req);
 }
 
 // PACKET_DATA를 받아서 다이얼로그로 보여주기
@@ -109,5 +114,24 @@ void PacketForm::onPacketData(const QJsonObject& data) {
     lay.addWidget(&hex);
     dlg.resize(720, 480);
     dlg.exec();
+}
+
+void PacketForm::on_FilterButton_clicked()
+{
+    //setting filter ip/port
+    if (!m_proxy) return;
+    m_proxy->setSrcIp(ui->leSrcIp->text());
+    m_proxy->setSrcPort(ui->leSrcPort->text());
+    m_proxy->setDstIp(ui->leDstIp->text());
+    m_proxy->setDstPort(ui->leDstPort->text());
+}
+
+
+void PacketForm::on_ResetButton_clicked()
+{
+    //reset filter and label
+    ui->leSrcIp->clear(); ui->leSrcPort->clear();
+    ui->leDstIp->clear(); ui->leDstPort->clear();
+    on_FilterButton_clicked();
 }
 

@@ -9,7 +9,7 @@ PacketModel::PacketModel(QObject* parent) : QAbstractTableModel(parent) {}
 QVariant PacketModel::headerData(int section, Qt::Orientation o, int role) const {
     if (o!=Qt::Horizontal || role!=Qt::DisplayRole) return {};
     static const char* H[] = {
-        "Time","Dir","Proto","Src","SPort","Dst","DPort","Len","Flags","Preview"
+        "Time","Proto","Src","SPort","Dst","DPort","Len","Flags","Preview"
     };
     return (section>=0 && section<ColCount) ? H[section] : QVariant{};
 }
@@ -21,7 +21,6 @@ QVariant PacketModel::data(const QModelIndex& idx, int role) const {
     if(role == Qt::DisplayRole){
         switch (idx.column()) {
         case Time:    return formatTimeUS(r.tsUsec);
-        case Dir:     return r.dir;
         case Proto:   return r.proto;
         case Src:     return r.src;
         case Sport:   return (int)r.sport;
@@ -62,7 +61,6 @@ void PacketModel::addFromJson(const QJsonObject& pkt) {
     row.dport = (quint16)fk["dst_port"].toInt();
 
     // 방향/길이/플래그
-    row.dir    = pkt["dir"].toString();           // 없으면 빈 문자열
     row.caplen = pkt["caplen"].toInt();
     row.flags  = pkt["l4"].toObject()["flags"].toString();
 

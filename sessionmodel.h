@@ -31,7 +31,6 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     // flow_key를 문자열 키로 만들어서 map
-    void upsertFromJson(const QJsonObject& evt); // FLOW_UPDATE/END 처리
     void replaceFromSummary(const QJsonObject& summary);
 
     static QString makeKey(const QJsonObject& flowKey);

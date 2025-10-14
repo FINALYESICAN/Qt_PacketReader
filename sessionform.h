@@ -21,6 +21,11 @@ struct Sample {
     double tp_b2a_bps;
 };
 
+struct LastTotals{
+    quint64 a2b = 0;
+    quint64 b2a = 0;
+};
+
 namespace Ui {
 class SessionForm;
 }
@@ -34,7 +39,6 @@ public:
     ~SessionForm();
 
 public slots:
-    void onFlow(const QJsonObject& evt);
     void onSummary(const QJsonObject& evt);
     void onTableRowChanged(const QModelIndex& cur, const QModelIndex& prev);
 
@@ -43,6 +47,7 @@ private:
     SessionModel* m_model = nullptr;
     // session key별 히스토리 버퍼
     QHash<QString, QVector<Sample>> m_hist;
+    QHash<QString, LastTotals> m_lastBytes;
     QString m_selectedKey;
 
     // 차트 구성요소

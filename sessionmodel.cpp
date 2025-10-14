@@ -53,41 +53,6 @@ QString SessionModel::makeKey(const QJsonObject& fk) {
         .arg(fk["dst_port"].toInt());
 }
 
-void SessionModel::upsertFromJson(const QJsonObject& evt) {
-    if (!evt.contains("flow_key") || !evt.contains("body")) return;
-    auto fk   = evt["flow_key"].toObject();
-    auto body = evt["body"].toObject();
-    QString key = makeKey(fk);
-
-    SessionRow row;
-    row.key = key;
-    row.proto  = (fk["proto"].toInt()==6) ? "TCP" : QString::number(fk["proto"].toInt());
-    row.src    = fk["src_ip"].toString();
-    row.sport  = (quint16)fk["src_port"].toInt();
-    row.dst    = fk["dst_ip"].toString();
-    row.dport  = (quint16)fk["dst_port"].toInt();
-    row.bytesA2B = body["bytes_a2b"].toVariant().toULongLong();
-    row.bytesB2A = body["bytes_b2a"].toVariant().toULongLong();
-    row.tsUsec   = evt["ts_usec"].toVariant().toLongLong();
-    if (evt["type"].toString()=="FLOW_END") {
-        QString reason = body["reason"].toString();
-        row.state = "ENDED(" + (reason.isEmpty()?"?":reason) + ")";
-    }
-
-    auto it = m_index.find(key);
-    if (it == m_index.end()) {
-        int r = m_rows.size();
-        beginInsertRows({}, r, r);
-        m_rows.push_back(row);
-        m_index.insert(key, r);
-        endInsertRows();
-    } else {
-        int r = it.value();
-        m_rows[r] = row;
-        emit dataChanged(index(r,0), index(r,ColCount-1));
-    }
-}
-
 void SessionModel::replaceFromSummary(const QJsonObject& evt) {
     if (evt["type"].toString() != "SUMMARY") return;
     const QJsonArray arr = evt["sessions"].toArray();

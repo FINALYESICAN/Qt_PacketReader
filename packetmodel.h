@@ -8,7 +8,6 @@
 
 struct PacketRow {
     qint64  tsUsec = 0;      // µs
-    QString dir;             // "A2B"/"B2A" (없으면 빈 문자열)
     QString proto; int protoNum=0;           // "TCP"/"UDP"/number
     QString src;  quint16 sport = 0;
     QString dst;  quint16 dport = 0;
@@ -22,7 +21,7 @@ class PacketModel: public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    enum Col { Time, Dir, Proto, Src, Sport, Dst, Dport, Len, Flags, Preview, ColCount };
+    enum Col { Time, Proto, Src, Sport, Dst, Dport, Len, Flags, Preview, ColCount };
     enum Roles { RawTsRole = Qt::UserRole+1, IdRole, ProtoNumRole };
     explicit PacketModel(QObject* parent=nullptr);
     int rowCount(const QModelIndex&) const override { return m_rows.size(); }

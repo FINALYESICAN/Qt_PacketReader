@@ -32,11 +32,6 @@ SessionForm::~SessionForm()
     delete ui;
 }
 
-void SessionForm::onFlow(const QJsonObject& evt) {
-    // SessionModel의 업데이트 로직 그대로 활용
-    m_model->upsertFromJson(evt);  // FLOW_UPDATE/END 처리
-}
-
 void SessionForm::onSummary(const QJsonObject& evt) {
     m_model->replaceFromSummary(evt); // SUMMARY 처리
     appendSamplesFromSummary(evt);
@@ -79,22 +74,39 @@ void SessionForm::appendSamplesFromSummary(const QJsonObject& summary) {
     const qint64 ts_ms = summary["ts_ns"].toVariant().toLongLong() / 1000000;
     const qint64 window_ms = 20000;
 
+    //이번 summary session key
+    QSet<QString> present;
+
     const auto arr = summary["sessions"].toArray();
     for (const auto& v : arr) {
         const auto s = v.toObject();
         // flow key와 동일한 문자열 키를 만든다 (SessionModel::makeKey와 동일 형식)
         const auto fk = s["flow_key"].toObject();
         const auto key = SessionModel::makeKey(fk);
+        present.insert(key);
+
+        const auto bytes_dir  = s["bytes_dir"].toObject();
+        const quint64 curA = bytes_dir["a2b"].toVariant().toULongLong();
+        const quint64 curB = bytes_dir["b2a"].toVariant().toULongLong();
+
+        LastTotals &last = m_lastBytes[key];
+
         Sample smp;
         smp.ts_ms       = ts_ms;
         // RTT
         const auto rtt  = s["rtt_ms"].toObject();
-        smp.rtt_syn_ms  = rtt["syn"].toDouble();
-        smp.rtt_ack_ms  = rtt["ack"].toDouble();
-        // Throughput (bps)
+        if (curA == last.a2b && curB == last.b2a) {
+            smp.rtt_syn_ms = 0.0;
+            smp.rtt_ack_ms = 0.0;
+        } else {
+            smp.rtt_syn_ms = rtt["syn"].toDouble();
+            smp.rtt_ack_ms = rtt["ack"].toDouble();
+        }
+
+        // Throughput (bps) 이전과 비교해서 들어왔을때만 늘리기
         const auto tp   = s["throughput_bps"].toObject();
-        smp.tp_a2b_bps  = tp["inst_a2b"].toDouble();   // 또는 ewma 사용
-        smp.tp_b2a_bps  = tp["inst_b2a"].toDouble();
+        smp.tp_a2b_bps  = (curA == last.a2b)?0.0:tp["inst_a2b"].toDouble();   // 또는 ewma 사용
+        smp.tp_b2a_bps  = (curB == last.a2b)?0.0:tp["inst_b2a"].toDouble();
 
         auto& vec = m_hist[key];
 
@@ -103,9 +115,37 @@ void SessionForm::appendSamplesFromSummary(const QJsonObject& summary) {
         int keepStart = 0;
         while (keepStart < vec.size() && vec[keepStart].ts_ms < cutoff) ++keepStart;
         if (keepStart > 0) vec.remove(0, keepStart);
+        if (vec.isEmpty() || vec.last().ts_ms != ts_ms){
+            vec.push_back(smp);
+        }
 
-        vec.push_back(smp);
         if (vec.size() > 2000) vec.remove(0, vec.size()-2000); // 메모리 제한 (옵션)
+
+        // 직전 누적값 갱신
+        last.a2b = curA;
+        last.b2a = curB;
+    }
+    for (auto it = m_hist.begin(); it != m_hist.end(); ++it) {
+        const QString& key = it.key();
+        if (present.contains(key)) continue;
+
+        auto& vec = it.value();
+        const qint64 cutoff = ts_ms - window_ms;
+        int keepStart = 0;
+        while (keepStart < vec.size() && vec[keepStart].ts_ms < cutoff) ++keepStart;
+        if (keepStart > 0) vec.remove(0, keepStart);
+
+        if (!vec.isEmpty() && vec.last().ts_ms == ts_ms) continue; // 중복 방지
+
+        Sample zero{};
+        zero.ts_ms = ts_ms;
+        zero.rtt_syn_ms = 0.0;
+        zero.rtt_ack_ms = 0.0;
+        zero.tp_a2b_bps = 0.0;
+        zero.tp_b2a_bps = 0.0;
+
+        vec.push_back(zero);
+        if (vec.size() > 2000) vec.remove(0, vec.size() - 2000);
     }
 }
 

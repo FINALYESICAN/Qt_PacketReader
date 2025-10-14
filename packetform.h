@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QJsonObject>
 #include "packetmodel.h"
+#include "packetfilterproxy.h"
 
 namespace Ui {
 class PacketForm;
@@ -23,12 +24,18 @@ signals:
 public slots:
     void onPacket(const QJsonObject& evt);
     void onPacketData(const QJsonObject& data);
+
 private slots:
     void on_tablePacket_doubleClicked(const QModelIndex &index);
+
+    void on_FilterButton_clicked();
+
+    void on_ResetButton_clicked();
 
 private:
     Ui::PacketForm *ui;
     PacketModel* m_model = nullptr;
+    packetfilterproxy* m_proxy = nullptr;
     void appendWithScrollGuard(const QJsonObject& evt);
 };
 
