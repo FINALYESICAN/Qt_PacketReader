@@ -1,5 +1,8 @@
 #include "alertmodel.h"
 #include <algorithm> // std::min
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 AlertModel::AlertModel(QObject* parent)
     : QAbstractTableModel(parent)
@@ -73,6 +76,33 @@ void AlertModel::appendFromJson(const QJsonObject& j) {
         m_rows.erase(m_rows.begin(), m_rows.begin() + removeCount);
         endRemoveRows();
     }
+}
+
+QJsonArray AlertModel::toJsonArray() const {
+    QJsonArray arr;
+    for (const auto& r : m_rows) {
+        if (!r.raw.isEmpty()) {
+            arr.append(r.raw);        // Telemetry에서 온 원본 JSON이 있으면 그걸 저장
+        } else {
+            QJsonObject j;
+            j["type"]    = "ALERT";
+            j["policy"]  = r.policy;
+            j["action"]  = r.action;
+            j["ts_usec"] = static_cast<qint64>(r.tsUsec);
+            j["time"]    = r.timeStr;
+            QJsonObject js, jd;
+            js["ip"]     = r.srcIp;
+            js["port"]   = static_cast<int>(r.srcPort);
+            jd["ip"]     = r.dstIp;
+            jd["port"]   = static_cast<int>(r.dstPort);
+            j["src"]     = js;
+            j["dst"]     = jd;
+            j["severity"]= r.severity;
+            j["preview"] = r.preview;
+            arr.append(j);
+        }
+    }
+    return arr;
 }
 
 QString AlertModel::hexPreview(const QByteArray& b, int maxLen) {

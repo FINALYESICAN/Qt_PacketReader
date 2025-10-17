@@ -36,6 +36,8 @@ public:
     // ALERT JSON 1건 추가
     void appendFromJson(const QJsonObject& j);
 
+    QJsonArray toJsonArray() const;
+
 private:
     QVector<AlertRow> m_rows;
 

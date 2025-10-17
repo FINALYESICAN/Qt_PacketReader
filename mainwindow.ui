@@ -22,22 +22,22 @@
       </property>
       <widget class="PacketForm" name="packet">
        <attribute name="title">
-        <string>packet</string>
+        <string>Packet</string>
        </attribute>
       </widget>
       <widget class="SessionForm" name="session">
        <attribute name="title">
-        <string>session</string>
+        <string>Session</string>
+       </attribute>
+      </widget>
+      <widget class="ReportForm" name="report">
+       <attribute name="title">
+        <string>Report</string>
        </attribute>
       </widget>
       <widget class="alertForm" name="alert">
        <attribute name="title">
-        <string>alert</string>
-       </attribute>
-      </widget>
-      <widget class="policyForm" name="policy">
-       <attribute name="title">
-        <string>policy</string>
+        <string>Alert</string>
        </attribute>
       </widget>
      </widget>
@@ -64,12 +64,6 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>policyForm</class>
-   <extends>QWidget</extends>
-   <header>policyform.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>PacketForm</class>
    <extends>QWidget</extends>
    <header>packetform.h</header>
@@ -79,6 +73,12 @@
    <class>SessionForm</class>
    <extends>QWidget</extends>
    <header>sessionform.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ReportForm</class>
+   <extends>QWidget</extends>
+   <header>reportform.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -20,6 +20,19 @@ PacketForm::PacketForm(QWidget *parent)
     //ui->tablePacket->setModel(m_model);
     ui->tablePacket->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->tablePacket->setSortingEnabled(true);
+
+    // PacketForm 생성자 끝부분에 추가
+    auto upd = [this]{ refreshFilterLabelsAndCount(); };
+
+    connect(m_model, &QAbstractItemModel::rowsInserted, this, [upd]{ upd(); });
+    connect(m_model, &QAbstractItemModel::rowsRemoved,  this, [upd]{ upd(); });
+    connect(m_model, &QAbstractItemModel::modelReset,   this, [upd]{ upd(); });
+
+    // 프록시 측 변화(필터 적용, 정렬 등)도 카운트가 바뀔 수 있음
+    connect(m_proxy, &QAbstractItemModel::rowsInserted, this, [upd]{ upd(); });
+    connect(m_proxy, &QAbstractItemModel::rowsRemoved,  this, [upd]{ upd(); });
+    connect(m_proxy, &QAbstractItemModel::modelReset,   this, [upd]{ upd(); });
+    connect(m_proxy, &QAbstractItemModel::layoutChanged,this, [upd]{ upd(); });
 }
 
 PacketForm::~PacketForm()
@@ -58,6 +71,7 @@ void PacketForm::appendWithScrollGuard(const QJsonObject& evt)
 
 void PacketForm::onPacket(const QJsonObject& evt) {
     appendWithScrollGuard(evt);
+    refreshFilterLabelsAndCount();
 }
 
 //더블 클릭시 패킷 페이로드 데이터 가져오기.
@@ -124,6 +138,8 @@ void PacketForm::on_FilterButton_clicked()
     m_proxy->setSrcPort(ui->leSrcPort->text());
     m_proxy->setDstIp(ui->leDstIp->text());
     m_proxy->setDstPort(ui->leDstPort->text());
+
+    refreshFilterLabelsAndCount();
 }
 
 
@@ -133,5 +149,39 @@ void PacketForm::on_ResetButton_clicked()
     ui->leSrcIp->clear(); ui->leSrcPort->clear();
     ui->leDstIp->clear(); ui->leDstPort->clear();
     on_FilterButton_clicked();
+}
+
+void PacketForm::refreshFilterLabelsAndCount()
+{
+    // 1) 카운트: 전체 vs 필터 후
+    const int total    = m_model  ? m_model->rowCount(QModelIndex())  : 0;
+    const int filtered = m_proxy  ? m_proxy->rowCount(QModelIndex())  : 0;
+
+    // 2) 현재 필터 문자열 구성 (UI의 lineEdit 값으로 재구성)
+    auto ipPort = [](const QString& ip, const QString& port){
+        if (ip.isEmpty() && port.isEmpty()) return QString("-");
+        if (ip.isEmpty())  return QString(":%1").arg(port);
+        if (port.isEmpty())return ip;
+        return QString("%1:%2").arg(ip, port);
+    };
+
+    const QString srcStr = ipPort(ui->leSrcIp->text().trimmed(),
+                                  ui->leSrcPort->text().trimmed());
+    const QString dstStr = ipPort(ui->leDstIp->text().trimmed(),
+                                  ui->leDstPort->text().trimmed());
+
+    // (선택) OR/AND 모드 표기 — 체크박스가 있다면 이름에 맞춰 사용
+    // const bool orMode = ui->cbOr->isChecked();
+    // const QString modeStr = orMode ? "OR" : "AND";
+
+    // 3) 라벨에 반영
+    //   - packetFilterLabel: "Src=..., Dst=..." 형식
+    //   - packetCountLabel : "count(filtered/total)" 형식
+    const QString filterText =
+        QString("Src=%1, Dst=%2").arg(srcStr, dstStr);
+    // + QString(", Mode=%1").arg(modeStr); // (선택) OR/AND 표기
+
+    ui->Filter->setText(filterText);
+    ui->PacketCountLabel->setText(QString("count: %1 / %2").arg(filtered).arg(total));
 }
 

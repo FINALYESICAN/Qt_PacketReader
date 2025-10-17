@@ -20,10 +20,14 @@ public:
 public slots:
     void onAlert(const QJsonObject& evt);
 
+private slots:
+    void on_LogButton_clicked();
+
 private:
     Ui::alertForm *ui;
     AlertModel* m_model = nullptr;
     void appendWithScrollGuard(const QJsonObject& evt);
+    QString suggestedSavePath() const;
 };
 
 #endif // ALERTFORM_H

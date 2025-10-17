@@ -37,6 +37,7 @@ private:
     PacketModel* m_model = nullptr;
     packetfilterproxy* m_proxy = nullptr;
     void appendWithScrollGuard(const QJsonObject& evt);
+    void refreshFilterLabelsAndCount();
 };
 
 #endif // PACKETFORM_H

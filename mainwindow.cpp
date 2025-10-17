@@ -21,6 +21,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::packetEvent,ui->packet,&PacketForm::onPacket);
     // 패킷 데이터 요청/가져오기
     connect(this, &MainWindow::packetDataEvent,ui->packet,&PacketForm::onPacketData);
+    // 세션 리포트 도착
+    connect(this, &MainWindow::reportEvent, ui->report, &ReportForm::onReport);
     connect(ui->packet, &PacketForm::packetReq,this,[this](const QJsonObject& req){
         m_TR->sendJson(req);
         qDebug()<<"send Packet Req id = "<<req["id"];
@@ -46,5 +48,7 @@ void MainWindow::onEvent(const QJsonObject& evt) {
         emit packetEvent(evt);
     } else if (type=="PACKET_DATA"){
         emit packetDataEvent(evt);
+    } else if (type == "REPORT"){
+        emit reportEvent(evt);
     }
 }

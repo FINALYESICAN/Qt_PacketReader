@@ -16,7 +16,7 @@ SOURCES += \
     mainwindow.cpp \
     packetform.cpp \
     packetmodel.cpp \
-    policyform.cpp \
+    reportform.cpp \
     sessionform.cpp \
     sessionmodel.cpp
 
@@ -28,7 +28,7 @@ HEADERS += \
     packetfilterproxy.h \
     packetform.h \
     packetmodel.h \
-    policyform.h \
+    reportform.h \
     sessionform.h \
     sessionmodel.h
 
@@ -36,7 +36,7 @@ FORMS += \
     alertform.ui \
     mainwindow.ui \
     packetform.ui \
-    policyform.ui \
+    reportform.ui \
     sessionform.ui
 
 # Default rules for deployment.

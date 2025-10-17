@@ -26,6 +26,7 @@ signals:
     void alertEvent(const QJsonObject&);        // ALERT
     void packetEvent(const QJsonObject&);       // PACKET (추가 예정시)
     void packetDataEvent(const QJsonObject&);   // PACKET DATA;
+    void reportEvent(const QJsonObject&);       // Session Report
 
 private slots:
     void onEvent(const QJsonObject& evt);
@@ -34,8 +35,8 @@ private slots:
 private:
     Ui::MainWindow *ui;
     TcpReceiver *m_TR;
-    //QString ip = QStringLiteral("192.168.0.133"); //raspbot
-    QString ip = QStringLiteral("192.168.2.44"); //raspberry
+    QString ip = QStringLiteral("192.168.0.133"); //raspbot
+    //QString ip = QStringLiteral("192.168.2.44"); //raspberry
     SessionForm*    m_sessionform = nullptr;
 };
 #endif // MAINWINDOW_H
