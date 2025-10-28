@@ -20,7 +20,11 @@ alertForm::alertForm(QWidget *parent)
     ui->tableAlerts->setModel(m_model);
     ui->tableAlerts->horizontalHeader()
         ->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->tableAlerts->horizontalHeader()
+        ->setSectionResizeMode(AlertModel::Preview, QHeaderView::Interactive);
+    ui->tableAlerts->setColumnWidth(AlertModel::Preview, 380);
     ui->tableAlerts->setSortingEnabled(true);
+    ui->tableAlerts->sortByColumn(AlertModel::Time, Qt::DescendingOrder);
 }
 
 alertForm::~alertForm()

@@ -35,7 +35,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     TcpReceiver *m_TR;
-    QString ip = QStringLiteral("192.168.0.133"); //raspbot
+    QString ip = QStringLiteral("192.168.3.51"); //raspbot
     //QString ip = QStringLiteral("192.168.2.44"); //raspberry
     SessionForm*    m_sessionform = nullptr;
 };

@@ -45,14 +45,32 @@ void AlertModel::appendFromJson(const QJsonObject& j) {
     r.policy   = j["policy"].toString();
     r.action   = j["action"].toString("ALERT");
 
+    auto determineSeverity = [](const QString& msg) -> QString {
+        const QString m = msg.toLower();
+        if (m.contains("ddos") || m.contains("flood") || m.contains("icmp"))
+            return "HIGH";
+        if (m.contains("unauthorized") || m.contains("invalid") || m.contains("attack") || m.contains("intrusion"))
+            return "CRITICAL";
+        if (m.contains("speed") || m.contains("threshold") || m.contains("limit"))
+            return "MEDIUM";
+        if (m.contains("info") || m.contains("connected") || m.contains("normal"))
+            return "LOW";
+        return "-";
+    };
+
+    // 기존 JSON에 severity가 없을 경우 자동 판정
+    if (j.contains("severity")) {
+        r.severity = j["severity"].toString();
+    } else {
+        r.severity = determineSeverity(r.policy);
+    }
+
     const auto js = j["src"].toObject();
     const auto jd = j["dst"].toObject();
     r.srcIp   = js["ip"].toString();
     r.srcPort = (quint16)js["port"].toInt();
     r.dstIp   = jd["ip"].toString();
     r.dstPort = (quint16)jd["port"].toInt();
-
-    r.severity = j.contains("severity") ? j["severity"].toString() : "-";
 
     const QString b64 = j["payload_b64"].toString();
     if (!b64.isEmpty()) {
@@ -63,9 +81,9 @@ void AlertModel::appendFromJson(const QJsonObject& j) {
     }
     r.raw = j;
 
-    const int row = m_rows.size();
+    const int row = 0;
     beginInsertRows({}, row, row);
-    m_rows.push_back(std::move(r));
+    m_rows.insert(m_rows.begin(),std::move(r));
     endInsertRows();
 
     // 과도 누적 방지 (선택)
